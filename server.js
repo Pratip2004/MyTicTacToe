@@ -4,7 +4,9 @@ import {Server} from 'socket.io';
 import next from 'next';
 
 const dev = process.env.NODE_ENV !== 'production';
-const nextApp = next({ dev });
+const port=3000;
+const domain="localhost"
+const nextApp = next({ dev,port,domain });
 const handle = nextApp.getRequestHandler();
 const PORT=3000;
 nextApp.prepare().then(() => {
