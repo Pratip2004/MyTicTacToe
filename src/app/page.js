@@ -2,6 +2,8 @@
 'use client'
 import { useEffect, useState } from 'react';
 import {io} from 'socket.io-client';
+import { toast,ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 const socket = io();
 
 const IndexPage = () => {
@@ -13,14 +15,21 @@ const IndexPage = () => {
   const [playerSymbol, setPlayerSymbol] = useState('');
   const [joinedGameId, setJoinedGameId] = useState('');
   const [winner, setWinner] = useState(null);
+  const [message,setMessage]=useState('');
+  const [copySuccess, setCopySuccess] = useState('');
+
 
   useEffect(() => {
+    socket.on("connect",()=>{
+      console.log("A user Connected",socket.id);
+    })
     socket.on('gameCreated', (newGameId) => {
       setGameId(newGameId);
        setIsGameStarted(true);
-      setIsMyTurn(true); // The creator starts first
+      setIsMyTurn(false); // The creator starts first
       setPlayerSymbol('X');
       console.log(`Game created with ID: ${newGameId}`);
+      toast.success("Game Created Succesfully")
     });
 
     socket.on('gameJoined', (joinedGameId) => {
@@ -29,6 +38,7 @@ const IndexPage = () => {
       setIsMyTurn(true); // The joiner goes second
       setPlayerSymbol('O');
       console.log(`Joined game with ID: ${joinedGameId}`);
+      toast.success(`Game Joined Succesfully,${joinedGameId}`)
     });
 
     socket.on('updateBoard', (newBoard) => {
@@ -43,14 +53,14 @@ const IndexPage = () => {
       // setIsGameStarted(false);
       console.log(`Game over. Winner: ${winner}`);
     });
-    socket.on('gameTie',({board})=>{
+    socket.on('gameTie',({board,index})=>{
       setBoard(board);
      setWinner(null);
-      
+      if(board[index]!=null && !winner) setMessage('The Game is Tied,Please Go back to Create New Game')
     })
 
     socket.on('error', (message) => {
-      alert(message);
+      toast.error(message);
       console.log('Error:', message);
     });
 
@@ -72,6 +82,7 @@ const IndexPage = () => {
     console.log(`Joining game with ID: ${id}`);
     socket.emit('joinGame', id);
     setJoinedGameId("");
+    // toast.success(`The New User Joined Using the ${id}`)
   };
 
   const makeMove = (index) => {
@@ -98,9 +109,14 @@ const IndexPage = () => {
     setIsMyTurn(false);
     setPlayerSymbol(null);
   }
+  const copyToClipboard=(textToCopy)=>{
+      navigator.clipboard.writeText(textToCopy);
+      toast.success(' Text Copied Succesfully') // Clear the message after 2 seconds
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <ToastContainer />
       {!isGameStarted ? (
         <div className="flex flex-col items-center space-y-4">
           <button
@@ -117,7 +133,7 @@ const IndexPage = () => {
               onChange={(e) => setJoinedGameId(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded text-black"
             />
-            <button
+          <button
               onClick={() =>{ 
                 joinGame(joinedGameId)
               }}
@@ -125,6 +141,7 @@ const IndexPage = () => {
             >
               Join Game
             </button>
+            {/* <ToastContainer/> */}
           </div>
         </div>
       ) : (
@@ -145,9 +162,19 @@ const IndexPage = () => {
            
           (
            <>
-            <div className="mb-4 text-lg font-bold text-black">
+           <div className=' flex flex-col gap-2'>
+           <div className="mb-4 text-lg font-bold text-black">
             Game ID: {gameId}
-          </div>
+            </div>
+            <button
+            onClick={()=>{
+              copyToClipboard(gameId)
+            }}
+        className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition duration-300 mb-3"
+      >
+        Copy to Clipboard
+      </button>
+           </div>
           <div className="grid grid-cols-3 gap-4">
             {board.map((value, index) => (
               <button

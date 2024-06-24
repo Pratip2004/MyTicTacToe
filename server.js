@@ -91,7 +91,7 @@ io.on('connection', (socket) => {
       //   console.log(`Game over. Winner: ${winner}`);
       // }
         if(!winner){
-          io.to(gameId).emit('gameTie',{board:game.board});
+          io.to(gameId).emit('gameTie',{board:game.board,index});
           delete games[gameId];
         } 
     }
